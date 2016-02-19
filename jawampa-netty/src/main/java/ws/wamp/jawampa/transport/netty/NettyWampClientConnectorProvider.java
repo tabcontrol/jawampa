@@ -16,6 +16,7 @@
 
 package ws.wamp.jawampa.transport.netty;
 
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,17 +24,6 @@ import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.SSLException;
 
-import ws.wamp.jawampa.ApplicationError;
-import ws.wamp.jawampa.WampMessages.WampMessage;
-import ws.wamp.jawampa.connection.IPendingWampConnection;
-import ws.wamp.jawampa.connection.IPendingWampConnectionListener;
-import ws.wamp.jawampa.connection.IWampClientConnectionConfig;
-import ws.wamp.jawampa.connection.IWampConnection;
-import ws.wamp.jawampa.connection.IWampConnectionListener;
-import ws.wamp.jawampa.connection.IWampConnectionPromise;
-import ws.wamp.jawampa.connection.IWampConnector;
-import ws.wamp.jawampa.connection.IWampConnectorProvider;
-import ws.wamp.jawampa.WampSerialization;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -48,17 +38,29 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import ws.wamp.jawampa.ApplicationError;
+import ws.wamp.jawampa.WampMessages.WampMessage;
+import ws.wamp.jawampa.WampSerialization;
+import ws.wamp.jawampa.connection.IPendingWampConnection;
+import ws.wamp.jawampa.connection.IPendingWampConnectionListener;
+import ws.wamp.jawampa.connection.IWampClientConnectionConfig;
+import ws.wamp.jawampa.connection.IWampConnection;
+import ws.wamp.jawampa.connection.IWampConnectionListener;
+import ws.wamp.jawampa.connection.IWampConnectionPromise;
+import ws.wamp.jawampa.connection.IWampConnector;
+import ws.wamp.jawampa.connection.IWampConnectorProvider;
 
 /**
  * Returns factory methods for the establishment of WAMP connections between
@@ -82,7 +84,8 @@ public class NettyWampClientConnectorProvider implements IWampConnectorProvider 
     @Override
     public IWampConnector createConnector(final URI uri,
             IWampClientConnectionConfig configuration,
-            List<WampSerialization> serializations) throws Exception {
+            List<WampSerialization> serializations,
+            final SocketAddress proxyAddress) throws Exception {
         String scheme = uri.getScheme();
         scheme = scheme != null ? scheme : "";
         
@@ -268,6 +271,9 @@ public class NettyWampClientConnectorProvider implements IWampConnectorProvider 
                         @Override
                         protected void initChannel(SocketChannel ch) {
                         ChannelPipeline p = ch.pipeline();
+                        if (proxyAddress != null) {
+                            p.addLast(new HttpProxyHandler(proxyAddress));
+                        }
                         if (sslCtx0 != null) {
                             p.addLast(sslCtx0.newHandler(ch.alloc(),
                                                          uri.getHost(),
