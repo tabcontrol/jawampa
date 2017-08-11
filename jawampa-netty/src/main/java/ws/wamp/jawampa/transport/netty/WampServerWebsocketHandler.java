@@ -191,6 +191,11 @@ public class WampServerWebsocketHandler extends ChannelInboundHandlerAdapter {
                 }
             });
         }
+
+        @Override
+        public String toString() {
+            return ctx.toString();
+        }
     }
 
     private void tryWebsocketHandshake(final ChannelHandlerContext ctx, FullHttpRequest request) {
