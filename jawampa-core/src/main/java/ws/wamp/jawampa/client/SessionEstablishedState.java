@@ -16,14 +16,14 @@
 
 package ws.wamp.jawampa.client;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.RejectedExecutionException;
-
 import rx.Subscriber;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -39,7 +39,6 @@ import ws.wamp.jawampa.Request;
 import ws.wamp.jawampa.SubscriptionFlags;
 import ws.wamp.jawampa.WampClient;
 import ws.wamp.jawampa.WampMessages;
-import ws.wamp.jawampa.WampRoles;
 import ws.wamp.jawampa.WampMessages.AbortMessage;
 import ws.wamp.jawampa.WampMessages.CallMessage;
 import ws.wamp.jawampa.WampMessages.ChallengeMessage;
@@ -59,13 +58,11 @@ import ws.wamp.jawampa.WampMessages.UnsubscribeMessage;
 import ws.wamp.jawampa.WampMessages.UnsubscribedMessage;
 import ws.wamp.jawampa.WampMessages.WampMessage;
 import ws.wamp.jawampa.WampMessages.WelcomeMessage;
+import ws.wamp.jawampa.WampRoles;
 import ws.wamp.jawampa.connection.IConnectionController;
 import ws.wamp.jawampa.connection.IWampConnectionPromise;
 import ws.wamp.jawampa.internal.IdGenerator;
 import ws.wamp.jawampa.internal.IdValidator;
-
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * The client is connected to the router and the session was established
@@ -427,6 +424,9 @@ public class SessionEstablishedState implements ClientState {
         if (flags != null && flags.contains(PublishFlags.DontExcludeMe)) {
             options.put("exclude_me", false);
         }
+        if (flags != null && flags.contains(PublishFlags.DiscloseMe)) {
+            options.put("disclose_me", true);
+        }
         
         if (flags != null && flags.contains(PublishFlags.RequireAcknowledge)) {
             // An acknowledge from the router in the form of a PUBLISHED or ERROR message
@@ -458,9 +458,22 @@ public class SessionEstablishedState implements ClientState {
         
         ObjectNode options = stateController.clientConfig().objectMapper().createObjectNode();
         
-        boolean discloseMe = flags != null && flags.contains(CallFlags.DiscloseMe) ? true : false;
-        if (discloseMe) {
-            options.put("disclose_me", discloseMe);
+        if (flags != null) {
+            if (flags.contains(CallFlags.DiscloseMe)) {
+                options.put("disclose_me", true);
+            }
+            
+            if (flags.contains(CallFlags.MatchExact)) {
+                //do nothing as this means we overrode
+            } else if (flags.contains(CallFlags.MatchPrefix)) {
+                options.put("match", "prefix");
+            } else if (flags.contains(CallFlags.MatchWildcard)) {
+                options.put("match", "wildcard");
+            }
+            
+            if (flags.contains(CallFlags.ReceiveProgress)) {
+                options.put("receive_progress", true);
+            }
         }
         
         final CallMessage callMsg = new CallMessage(requestId, options, procedure, 
@@ -490,8 +503,30 @@ public class SessionEstablishedState implements ClientState {
         lastRequestId = requestId;
 
         ObjectNode options = stateController.clientConfig().objectMapper().createObjectNode();
-        if (flags != null && flags.contains(RegisterFlags.DiscloseCaller)) {
-            options.put("disclose_caller", true);
+        if (flags != null) {
+            if (flags.contains(RegisterFlags.DiscloseCaller)) {
+                options.put("disclose_caller", true);
+            }
+            
+            if (flags.contains(RegisterFlags.InvokeSingle)) {
+                //do nothing as this means we overrode
+            } else if (flags.contains(RegisterFlags.InvokeFirst)) {
+                options.put("invoke", "first");
+            } else if (flags.contains(RegisterFlags.InvokeLast)) {
+                options.put("invoke", "last");
+            } else if (flags.contains(RegisterFlags.InvokeRoundRobin)) {
+                options.put("invoke", "roundrobin");
+            } else if (flags.contains(RegisterFlags.InvokeRandom)) {
+                options.put("invoke", "random");
+            }
+            
+            if (flags.contains(RegisterFlags.MatchExact)) {
+                //do nothing as this means we overrode
+            } else if (flags.contains(RegisterFlags.MatchPrefix)) {
+                options.put("match", "prefix");
+            } else if (flags.contains(RegisterFlags.MatchWildcard)) {
+                options.put("match", "wildcard");
+            }
         }
 
         final RegisterMessage msg = new RegisterMessage(requestId, options, topic);

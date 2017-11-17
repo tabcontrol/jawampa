@@ -28,5 +28,7 @@ public enum PublishFlags {
      * between client and router is established. If the flag is set the response from the router
      * to a publish message will be used as a result for a publish request.
      */
-    RequireAcknowledge;
+    RequireAcknowledge,
+    
+    DiscloseMe;
 }

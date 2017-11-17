@@ -20,5 +20,22 @@ public enum RegisterFlags {
     /**
      * the registered procedure is called with the caller's sessionID as part of the call details object.
      */
-    DiscloseCaller;
+    DiscloseCaller,
+    
+    /**
+     * How are duplicate registrations of this procedure handled?
+     */
+    InvokeSingle, // default, duplicate registrations cause errors and not necessary to specify but will override if multiple invoke flags are present
+    InvokeLast, // the last client to register is called when the precedure is executed
+    InvokeFirst, // the first client to register is called when the precedure is executed
+    InvokeRoundRobin, // all clients that are registered will be called in a round robin fashion
+    InvokeRandom, // all clients that are registered will be called in a random fashion
+    
+    /**
+     * How is this procedure registration matched against procedure call uris
+     */
+    MatchExact, //default, exact procedure URI match and not necessary to specify but will override if multiple match flags are present
+    MatchPrefix, // match for all precedure calls that have the given uri prefix
+    MatchWildcard // matching using .. wildcards
+    ;
 }
