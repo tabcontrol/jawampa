@@ -31,4 +31,8 @@ public class WampError extends Exception {
     public WampError(String message) {
         super(message);
     }
+    
+    public WampError(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
