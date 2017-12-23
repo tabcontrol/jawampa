@@ -16,6 +16,11 @@
 
 package ws.wamp.jawampa;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -34,9 +39,6 @@ import ws.wamp.jawampa.client.StateController;
 import ws.wamp.jawampa.internal.ArgArrayBuilder;
 import ws.wamp.jawampa.internal.Promise;
 import ws.wamp.jawampa.internal.UriValidator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Provides the client-side functionality for WAMP.<br>
@@ -443,6 +445,61 @@ public class WampClient {
         });
     }
     
+    public <T> Observable<T> makeSubscription(final String topic, SubscriptionFlags flags, final JavaType eventType)
+    {
+        return makeSubscription(topic, flags).map(new Func1<PubSubData,T>() {
+            @Override
+            public T call(PubSubData ev) {
+                if (eventType == null) {
+                    // We don't need a value
+                    return null;
+                }
+
+                if (ev.arguments == null || ev.arguments.size() < 1)
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_VALUE));
+
+                JsonNode eventNode = ev.arguments.get(0);
+                if (eventNode.isNull()) return null;
+
+                T eventValue;
+                try {
+                    eventValue = clientConfig.objectMapper().convertValue(eventNode, eventType);
+                } catch (IllegalArgumentException e) {
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.INVALID_VALUE_TYPE, e));
+                }
+                return eventValue;
+            }
+        });
+    }
+    
+    public <T> Observable<T> makeSubscription(final String topic, SubscriptionFlags flags, final TypeReference<?> typeReference)
+    {
+        return makeSubscription(topic, flags).map(new Func1<PubSubData,T>() {
+            @Override
+            public T call(PubSubData ev) {
+                if (typeReference == null) {
+                    // We don't need a value
+                    return null;
+                }
+
+                if (ev.arguments == null || ev.arguments.size() < 1)
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_VALUE));
+
+                JsonNode eventNode = ev.arguments.get(0);
+                if (eventNode.isNull()) return null;
+
+                T eventValue;
+                try {
+                    eventValue = clientConfig.objectMapper().convertValue(eventNode, typeReference);
+                } catch (IllegalArgumentException e) {
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.INVALID_VALUE_TYPE));
+                }
+                return eventValue;
+            }
+        });
+    }
+    
+    
     /**
      * Returns an observable that allows to subscribe on the given topic.<br>
      * The actual subscription will only be made after subscribe() was called
@@ -474,23 +531,22 @@ public class WampClient {
         return makeSubscription(topic, flags).map(new Func1<PubSubData,EventDetails<T>>() {
             @Override
             public EventDetails<T> call(PubSubData ev) {
-                if (eventClass == null || eventClass == Void.class) {
-                    // We don't need a value
-                    return null;
-                }
-                
                 //get the complete topic name 
-                //which may not be the same as method parameter 'topic' during wildcard or prefix subscriptions 
+                //which may not be the same as method parameter 'topic' during wildcard or prefix subscriptions                 
                 String actualTopic = null;
                 if(ev.details != null && ev.details.get("topic") != null){
                 	actualTopic = ev.details.get("topic").asText();
+                }
+                if (eventClass == null || eventClass == Void.class) {
+                    // We don't need a value
+                    return new EventDetails<T>(null, actualTopic);
                 }
 
                 if (ev.arguments == null || ev.arguments.size() < 1)
                     throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_VALUE));
 
                 JsonNode eventNode = ev.arguments.get(0);
-                if (eventNode.isNull()) return null;
+                if (eventNode.isNull()) return new EventDetails<T>(null, actualTopic);
 
                 T eventValue;
                 try {
@@ -502,6 +558,74 @@ public class WampClient {
             }
         });
     }
+    
+    public <T> Observable<EventDetails<T>> makeSubscriptionWithDetails(final String topic, SubscriptionFlags flags, final JavaType javaType)
+    {
+        return makeSubscription(topic, flags).map(new Func1<PubSubData,EventDetails<T>>() {
+            @Override
+            public EventDetails<T> call(PubSubData ev) {
+                //get the complete topic name 
+                //which may not be the same as method parameter 'topic' during wildcard or prefix subscriptions                 
+                String actualTopic = null;
+                if(ev.details != null && ev.details.get("topic") != null){
+                	actualTopic = ev.details.get("topic").asText();
+                }
+                if (javaType == null) {
+                    // We don't need a value
+                    return new EventDetails<T>(null, actualTopic);
+                }
+
+                if (ev.arguments == null || ev.arguments.size() < 1)
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_VALUE));
+
+                JsonNode eventNode = ev.arguments.get(0);
+                if (eventNode.isNull()) return new EventDetails<T>(null, actualTopic);
+
+                T eventValue;
+                try {
+                    eventValue = clientConfig.objectMapper().convertValue(eventNode, javaType);
+                } catch (IllegalArgumentException e) {
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.INVALID_VALUE_TYPE));
+                }
+                return new EventDetails<T>(eventValue, actualTopic);
+            }
+        });
+    }
+    
+    public <T> Observable<EventDetails<T>> makeSubscriptionWithDetails(final String topic, SubscriptionFlags flags, final TypeReference<?> typeRef)
+    {
+        return makeSubscription(topic, flags).map(new Func1<PubSubData,EventDetails<T>>() {
+            @Override
+            public EventDetails<T> call(PubSubData ev) {
+                //get the complete topic name 
+                //which may not be the same as method parameter 'topic' during wildcard or prefix subscriptions                 
+                String actualTopic = null;
+                if(ev.details != null && ev.details.get("topic") != null){
+                	actualTopic = ev.details.get("topic").asText();
+                }
+                if (typeRef == null) {
+                    // We don't need a value
+                    return new EventDetails<T>(null, actualTopic);
+                }
+
+                if (ev.arguments == null || ev.arguments.size() < 1)
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_VALUE));
+
+                JsonNode eventNode = ev.arguments.get(0);
+                if (eventNode.isNull()) return new EventDetails<T>(null, actualTopic);
+
+                T eventValue;
+                try {
+                    eventValue = clientConfig.objectMapper().convertValue(eventNode, typeRef);
+                } catch (IllegalArgumentException e) {
+                    throw OnErrorThrowable.from(new ApplicationError(ApplicationError.INVALID_VALUE_TYPE));
+                }
+                return new EventDetails<T>(eventValue, actualTopic);
+            }
+        });
+    }
+    
+    
     
     /**
      * Returns an observable that allows to subscribe on the given topic.<br>
