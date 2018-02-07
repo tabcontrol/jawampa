@@ -429,7 +429,12 @@ public class WampClient {
                 if (ev.arguments == null || ev.arguments.size() < 1)
                     throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_VALUE));
 
-                JsonNode eventNode = ev.arguments.get(0);
+                JsonNode eventNode = null;
+                if (!eventClass.isArray()) {
+                	eventNode = ev.arguments.get(0);
+                } else {
+                	eventNode = ev.arguments;
+                }
                 if (eventNode.isNull()) return null;
 
                 T eventValue;
@@ -489,7 +494,12 @@ public class WampClient {
                 if (ev.arguments == null || ev.arguments.size() < 1)
                     throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_VALUE));
 
-                JsonNode eventNode = ev.arguments.get(0);
+                JsonNode eventNode = null;
+                if (!eventClass.isArray()) {
+                	eventNode = ev.arguments.get(0);
+                } else {
+                	eventNode = ev.arguments;
+                }
                 if (eventNode.isNull()) return null;
 
                 T eventValue;
@@ -748,8 +758,13 @@ public class WampClient {
                 
                 if (reply.arguments == null || reply.arguments.size() < 1)
                     throw OnErrorThrowable.from(new ApplicationError(ApplicationError.MISSING_RESULT));
-                    
-                JsonNode resultNode = reply.arguments.get(0);
+                JsonNode resultNode = null;
+                
+                if (!returnValueClass.isArray()) {
+                    resultNode = reply.arguments.get(0);                	
+                } else {
+                	resultNode = reply.arguments;
+                }
                 if (resultNode.isNull()) return null;
                 
                 T result;
