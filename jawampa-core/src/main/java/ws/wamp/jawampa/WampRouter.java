@@ -30,6 +30,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import rx.Observable;
 import rx.Scheduler;
 import rx.schedulers.Schedulers;
@@ -398,7 +399,7 @@ public class WampRouter {
     }
     
     class ClientHandler implements IWampConnectionListener {
-        
+
         IConnectionController controller;
         public RouterHandlerState state = RouterHandlerState.Open;
         long sessionId;
@@ -473,7 +474,7 @@ public class WampRouter {
             }
         } else if (msg instanceof CallMessage) {
             // The client wants to call a remote function
-            // Verify the message
+            // Verify the messageWampClientEventLoop
             CallMessage call = (CallMessage) msg;
             String err = null;
             if (!UriValidator.tryValidate(call.procedure, handler.realm.config.useStrictUriValidation)) {
@@ -580,8 +581,12 @@ public class WampRouter {
             }
             
             if (err != null) { // If we have an error send that to the client
+                ArrayNode arguments = objectMapper.createArrayNode();
+                arguments.add(proc.procName);
+                arguments.add(proc.registrationId);
+                arguments.add(proc.provider.controller.connection().toString());
                 ErrorMessage errMsg = new ErrorMessage(RegisterMessage.ID, reg.requestId, 
-                    null, err, null, null);
+                    null, err, arguments, null);
                 handler.controller.sendMessage(errMsg, IWampConnectionPromise.Empty);
                 return;
             }
