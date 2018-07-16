@@ -21,5 +21,11 @@ public enum CallFlags {
      * Set the disclose_me flag on the Call message to true.<br>
      * This will allow the remote call endpoint to access information on this client's WAMP session.
      */
-    DiscloseMe
+    DiscloseMe,
+    
+    MatchExact, //default, exact procedure URI match and not necessary to specify but will override if multiple match flags are present
+    MatchPrefix, // match for all precedure calls that have the given uri prefix
+    MatchWildcard,
+    
+    ReceiveProgress // Should progress messages be sent if the call is long running
 }

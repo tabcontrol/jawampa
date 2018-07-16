@@ -16,10 +16,9 @@
 
 package ws.wamp.jawampa;
 
-import ws.wamp.jawampa.connection.IWampConnectorProvider;
-
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import ws.wamp.jawampa.connection.IWampConnectorProvider;
 
 /**
  * Base class for all WAMP related exceptions that can/may be
@@ -46,15 +45,31 @@ public class ApplicationError extends WampError {
     }
     
     public ApplicationError(String uri) {
-        this(uri, null, null);
+        this(uri, (ArrayNode) null, (ObjectNode) null);
     }
     
     public ApplicationError(String uri, ArrayNode args) {
-        this(uri, args, null);
+        this(uri, args, (ObjectNode) null);
     }
 
     public ApplicationError(String uri, ArrayNode args, ObjectNode kwArgs) {
         super(uri);
+        if (uri == null) throw new NullPointerException();
+        this.uri = uri;
+        this.args = args;
+        this.kwArgs = kwArgs;
+    }
+    
+    public ApplicationError(String uri, Throwable cause) {
+        this(uri, null, null, cause);
+    }
+    
+    public ApplicationError(String uri, ArrayNode args, Throwable cause) {
+        this(uri, args, null, cause);
+    }
+
+    public ApplicationError(String uri, ArrayNode args, ObjectNode kwArgs, Throwable cause) {
+        super(uri, cause);
         if (uri == null) throw new NullPointerException();
         this.uri = uri;
         this.args = args;

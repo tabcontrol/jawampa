@@ -17,12 +17,12 @@
 package ws.wamp.jawampa;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.msgpack.jackson.dataformat.MessagePackFactory;
-
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
+import de.undercouch.bson4jackson.BsonFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 /**
  * Possible serialization methods for WAMP
@@ -32,6 +32,9 @@ public enum WampSerialization {
     Invalid("", true, null),
     /** Use the JSON serialization */
     Json("wamp.2.json", true, new ObjectMapper()),
+    /** Use universal binary JSON (BSON) serialization */
+    Ubjson("wamp.2.ubjson", false, new ObjectMapper(new BsonFactory())),
+    Cbor("wamp.2.cbor", false, new ObjectMapper(new CBORFactory())),
     /** Use the MessagePack serialization */
     MessagePack("wamp.2.msgpack", false, new ObjectMapper(new MessagePackFactory()));
 
@@ -60,8 +63,13 @@ public enum WampSerialization {
 
     public static WampSerialization fromString(String serialization) {
         if (serialization == null) return Invalid;
-        else if (serialization.equals("wamp.2.json")) return Json;
-        else if (serialization.equals("wamp.2.msgpack")) return MessagePack;
+        
+        serialization = serialization.toLowerCase();
+        
+        if (serialization.contains("ubjson")) return Ubjson;
+        else if (serialization.contains("json")) return Json;
+        else if (serialization.contains("cbor")) return Cbor;
+        else if (serialization.contains("msgpack")) return MessagePack;
         return Invalid;
     }
     
@@ -79,6 +87,8 @@ public enum WampSerialization {
 
     public static void addDefaultSerializations(List<WampSerialization> serializations) {
         serializations.add(Json);
+        serializations.add(Ubjson);
+        serializations.add(Cbor);
         serializations.add(MessagePack);
     }
     

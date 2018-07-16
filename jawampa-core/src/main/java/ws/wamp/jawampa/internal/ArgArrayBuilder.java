@@ -36,7 +36,7 @@ public class ArgArrayBuilder {
         // Build the arguments array and serialize the arguments
         final ArrayNode argArray = objectMapper.createArrayNode();
         for (Object arg : args) {
-            argArray.addPOJO(arg);
+            argArray.add(objectMapper.valueToTree(arg));
         }
         return argArray;
     }
