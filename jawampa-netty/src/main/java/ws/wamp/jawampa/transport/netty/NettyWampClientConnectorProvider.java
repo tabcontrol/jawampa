@@ -257,7 +257,7 @@ public class NettyWampClientConnectorProvider implements IWampConnectorProvider 
                     if (scheduler instanceof EventLoopGroup) {
                         nettyEventLoop = (EventLoopGroup)scheduler;
                     } else {
-                        connectListener.connectFailed(new ApplicationError(ApplicationError.INCOMATIBLE_SCHEDULER));
+                        connectListener.connectFailed(new ApplicationError(ApplicationError.INCOMPATIBLE_SCHEDULER));
                         return IPendingWampConnection.Dummy;
                     }
                     
