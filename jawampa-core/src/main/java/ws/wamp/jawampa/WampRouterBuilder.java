@@ -71,24 +71,25 @@ public class WampRouterBuilder {
      * @return This WampRouterBuilder object
      */
     public WampRouterBuilder addRealm(String realmName, WampRoles[] roles, boolean useStrictUriValidation) throws ApplicationError {
-        if (realmName == null || roles == null)
+        if (realmName == null) {
             throw new ApplicationError(ApplicationError.INVALID_REALM);
-        
+        }
+        if (roles == null || roles.length == 0) {
+        	throw new ApplicationError(ApplicationError.INVALID_ROLES);
+        }        
         // Validate the realm name
-        if (!UriValidator.tryValidate(realmName, useStrictUriValidation) || this.realms.containsKey(realmName))
+        if (!UriValidator.tryValidate(realmName, useStrictUriValidation) || this.realms.containsKey(realmName)) {
             throw new ApplicationError(ApplicationError.INVALID_REALM);
+        }
         
         // Validate and copy the roles
         Set<WampRoles> roleSet = new HashSet<WampRoles>();
         for (WampRoles r : roles) {
-            if (r == null)
-                throw new ApplicationError(ApplicationError.INVALID_REALM);
+            if (r == null) {
+                throw new ApplicationError(ApplicationError.INVALID_ROLES);
+            }
             roleSet.add(r);
         }
-        
-        // Check for at least one role
-        if (roleSet.size() == 0)
-            throw new ApplicationError(ApplicationError.INVALID_REALM);
         
         RealmConfig realmConfig = new RealmConfig(roleSet, useStrictUriValidation);
         
