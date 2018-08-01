@@ -22,7 +22,7 @@ package ws.wamp.jawampa.internal;
  */
 public class IdValidator {
     
-    public static final long MIN_VALID_ID = 0L;
+    public static final long MIN_VALID_ID = 1L;
     public static final long MAX_VALID_ID = 9007199254740992L; // 2^53
     
     /**
