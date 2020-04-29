@@ -2,9 +2,9 @@
   <modelVersion>4.0.0</modelVersion>
 
     <parent>
-      <groupId>ws.wamp.jawampa</groupId>
+      <groupId>br.com.tabcontrol</groupId>
       <artifactId>jawampa-parent</artifactId>
-      <version>0.5.1-STAGING</version>
+      <version>0.5.1</version>
     </parent>
 
   <artifactId>jawampa-netty</artifactId>
